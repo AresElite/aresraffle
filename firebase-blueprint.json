@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "athlete": {
+      "title": "Athlete",
+      "description": "An athlete registered in the system",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "dateOfBirth": { "type": "string" },
+        "age": { "type": "number" },
+        "sport": { "type": "string" },
+        "level": { "type": "string" },
+        "position": { "type": "string" },
+        "team": { "type": "string" },
+        "graduationYear": { "type": "string" },
+        "parentGuardianName": { "type": "string" },
+        "parentGuardianEmail": { "type": "string" },
+        "parentGuardianPhone": { "type": "string" },
+        "dominantHand": { "type": "string" },
+        "dominantEye": { "type": "string" },
+        "correctiveLenses": { "type": "string" },
+        "concussionHistory": { "type": "string" },
+        "performanceGoal": { "type": "string" },
+        "interestedInEvaluation": { "type": "string" },
+        "interestedInTraining": { "type": "string" },
+        "consentAccepted": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["firstName", "lastName", "email", "createdAt"]
+    },
+    "result": {
+      "title": "Result",
+      "description": "A drill result for an athlete",
+      "type": "object",
+      "properties": {
+        "athleteId": { "type": "string" },
+        "eventId": { "type": "string" },
+        "drillId": { "type": "string" },
+        "trialNumber": { "type": "number" },
+        "reactionTimeMs": { "type": "number" },
+        "accuracyPercentage": { "type": "number" },
+        "completionTimeSeconds": { "type": "number" },
+        "misses": { "type": "number" },
+        "falseStarts": { "type": "number" },
+        "correctResponses": { "type": "number" },
+        "incorrectResponses": { "type": "number" },
+        "score": { "type": "number" },
+        "ballsBlocked": { "type": "number" },
+        "ballsBlockedAverage": { "type": "number" },
+        "bombsDodged": { "type": "number" },
+        "bombsDodgedAverage": { "type": "number" },
+        "multiplier": { "type": "number" },
+        "bonus": { "type": "number" },
+        "compositeScore": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["athleteId", "drillId", "compositeScore", "createdAt"]
+    }
+  },
+  "firestore": {
+    "athletes/{athleteId}": {
+      "schema": { "$ref": "#/entities/athlete" },
+      "description": "Collection of all athletes"
+    },
+    "results/{resultId}": {
+      "schema": { "$ref": "#/entities/result" },
+      "description": "Collection of all results"
+    }
+  }
+}

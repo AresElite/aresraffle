@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-ares-bg: #0B0F2A;
+  --color-ares-charcoal: #111428;
+  --color-ares-white: #EAF0FF;
+  --color-ares-muted: #9AA3C7;
+  --color-ares-teal: #2998AA;
+  --color-ares-purple: #8B5CF6;
+  --color-ares-dark-purple: #2D234F;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-ares-bg);
+    color: var(--color-ares-white);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .glow-shadow {
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+  }
+  .glow-shadow-strong {
+    box-shadow: 0 0 25px rgba(139, 92, 246, 0.6);
+  }
+  .border-ares {
+    border-color: rgba(45, 35, 79, 0.5);
+  }
+  .bg-tech-grid {
+    background-image: linear-gradient(to right, rgba(128, 128, 128, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(128, 128, 128, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .text-ares-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(to right, var(--color-ares-teal), var(--color-ares-purple));
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .glow-purple { background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%); }
+  .glow-teal { background: radial-gradient(circle, rgba(41, 152, 170, 0.1) 0%, transparent 70%); }
+  .origami-clip { clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%); }
+}
+
