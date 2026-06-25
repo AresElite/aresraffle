@@ -22,9 +22,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Top Header */}
         <header className="h-16 border-b border-[rgba(45,35,79,0.5)] bg-[var(--color-ares-bg)]/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 z-10 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-[var(--color-ares-teal)] flex items-center justify-center rounded-lg shadow-[0_0_15px_rgba(41,152,170,0.4)]">
-              <span className="text-black font-black text-xl">A</span>
-            </div>
+            <img src="/ares-logo.png" alt="Ares Elite Logo" className="w-10 h-10 object-contain rounded-full shadow-[0_0_15px_rgba(41,152,170,0.4)]" />
             <div>
               <h1 className="text-lg font-bold tracking-tight uppercase leading-none">Ares Elite</h1>
               <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--color-ares-teal)]">Sports Vision Lab</p>
@@ -63,9 +61,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Top Header */}
       <header className="h-16 border-b border-ares bg-[var(--color-ares-bg)]/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 z-10 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-[var(--color-ares-teal)] flex items-center justify-center rounded-lg shadow-[0_0_15px_rgba(41,152,170,0.4)] hidden md:flex">
-            <span className="text-black font-black text-xl">A</span>
-          </div>
+          <img src="/ares-logo.png" alt="Ares Elite Logo" className="w-10 h-10 object-contain rounded-full shadow-[0_0_15px_rgba(41,152,170,0.4)] hidden md:block" />
           <div>
              <h1 className="text-lg font-bold tracking-tight uppercase leading-none">Ares Elite</h1>
              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--color-ares-teal)]">Sports Vision Lab</p>
