@@ -58,14 +58,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/register" element={<Registration />} />
-            <Route 
-              path="/entry" 
-              element={
-                <ProtectedRoute>
-                  <DataEntry />
-                </ProtectedRoute>
-              } 
-            />
+            <Route path="/entry" element={<DataEntry />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route 
               path="/admin" 
