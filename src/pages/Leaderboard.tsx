@@ -1,103 +1,122 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "motion/react";
 import { useStore } from "../store";
-import { Trophy, Filter, Crown, Search } from "lucide-react";
+import { Trophy, Filter, Crown, Search, Calendar, MapPin } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useSearchParams } from "react-router-dom";
+import { DrillCategory } from "../types";
 
-type SortOption = "score_high" | "score_low" | "ballsBlocked" | "bombsDodged" | "newest" | "oldest" | "sport";
+type SortOption = "score_best" | "newest" | "oldest" | "sport";
 
-const DRILL_SORT_OPTIONS: Record<string, { value: SortOption; label: string }[]> = {
-  "drill-gust": [
-    { value: "score_high", label: "Rank: Highest Score" },
-    { value: "score_low", label: "Rank: Lowest Score" },
-    { value: "ballsBlocked", label: "Rank: Balls Blocked" },
-    { value: "bombsDodged", label: "Rank: Bombs Dodged" },
+const DRILL_SORT_OPTIONS: Record<DrillCategory, { value: SortOption; label: string }[]> = {
+  GUST: [
+    { value: "score_best", label: "Rank: Highest Score" },
   ],
-  "drill-rrt": [
-    { value: "score_low", label: "Rank: Fastest Reaction Time" },
-    { value: "score_high", label: "Rank: Slowest Reaction Time" },
+  RRT: [
+    { value: "score_best", label: "Rank: Fastest Reaction Time" },
   ],
-  "drill-gonogo": [
-    { value: "score_high", label: "Rank: Most Correct" },
-    { value: "score_low", label: "Rank: Least Correct" },
+  GoNoGo: [
+    { value: "score_best", label: "Rank: Most Correct Responses" },
   ],
-  "drill-crt": [
-    { value: "score_high", label: "Rank: Highest Accuracy" },
-    { value: "score_low", label: "Rank: Fastest Reaction Time" },
+  CRT: [
+    { value: "score_best", label: "Rank: Highest Accuracy" },
   ],
 };
 
+const DRILL_LABELS: Record<DrillCategory, string> = {
+  GUST: "NeuroTrainer GUST",
+  RRT: "Raw Reaction Time",
+  GoNoGo: "Go / No-Go",
+  CRT: "Choice Reaction Time",
+};
+
 export function Leaderboard() {
-  const { results, athletes, drills } = useStore();
-  const [selectedDrill, setSelectedDrill] = useState<string>(drills[0]?.id || "drill-gust");
-  const [sortBy, setSortBy] = useState<SortOption>("score_high");
+  const { leaderboardEntries, eventLeads, leads, events, currentEventId } = useStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Extract Event ID from search parameter or fallback to active event in store
+  const eventId = searchParams.get("eventId") || currentEventId || "";
+  const event = events.find((e) => e.id === eventId);
+
+  const [selectedDrill, setSelectedDrill] = useState<DrillCategory>("GUST");
+  const [sortBy, setSortBy] = useState<SortOption>("score_best");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  const handleDrillChange = (drillId: string) => {
-    setSelectedDrill(drillId);
-    if (drillId === "drill-rrt") {
-      setSortBy("score_low");
+  const handleDrillChange = (drill: DrillCategory) => {
+    setSelectedDrill(drill);
+    setSortBy("score_best");
+  };
+
+  const handleEventChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val) {
+      setSearchParams({ eventId: val });
     } else {
-      setSortBy("score_high");
+      setSearchParams({});
     }
   };
 
   const leaderboardData = useMemo(() => {
-    let data = results
-      .filter((r) => r.drillId === selectedDrill)
-      .map((r) => {
-        const athlete = athletes.find((a) => a.id === r.athleteId);
+    if (!eventId) return [];
+
+    let data = leaderboardEntries
+      .filter((le) => le.event_id === eventId && le.category === selectedDrill)
+      .map((le) => {
+        const eventLead = eventLeads.find((el) => el.event_id === eventId && el.lead_id === le.lead_id);
+        const leadDetails = leads.find((l) => l.id === le.lead_id);
         return {
-          ...r,
-          athlete,
+          ...le,
+          lead: leadDetails,
+          eventLead,
         };
       })
-      .filter((r) => r.athlete !== undefined);
+      .filter((item) => item.lead !== undefined);
 
-    // Apply Search Filter
+    // Apply Search Filter (Name, Sport/Industry, Organization)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      data = data.filter((r) =>
-        `${r.athlete!.firstName} ${r.athlete!.lastName}`.toLowerCase().includes(q) ||
-        r.athlete!.sport?.toLowerCase().includes(q) ||
-        r.athlete!.team?.toLowerCase().includes(q)
+      data = data.filter((item) =>
+        `${item.lead!.first_name} ${item.lead!.last_name}`.toLowerCase().includes(q) ||
+        item.lead!.sport_or_industry?.toLowerCase().includes(q) ||
+        item.lead!.organization?.toLowerCase().includes(q)
       );
     }
 
-    // Sort
+    // Sort entries
     data.sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      if (sortBy === "sport") return (a.athlete?.sport || "").localeCompare(b.athlete?.sport || "");
-      
-      // Drill-specific sorts
-      if (selectedDrill === "drill-gust") {
-        if (sortBy === "ballsBlocked") return (b.ballsBlocked || 0) - (a.ballsBlocked || 0);
-        if (sortBy === "bombsDodged") return (b.bombsDodged || 0) - (a.bombsDodged || 0);
-        if (sortBy === "score_low") return (a.score ?? a.compositeScore) - (b.score ?? b.compositeScore);
-        return (b.score ?? b.compositeScore) - (a.score ?? a.compositeScore);
+      if (sortBy === "newest") return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      if (sortBy === "oldest") return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+      if (sortBy === "sport") return (a.lead?.sport_or_industry || "").localeCompare(b.lead?.sport_or_industry || "");
+
+      // Default/Best score sort:
+      if (selectedDrill === "GUST") {
+        // GUST: Highest score is best
+        return b.score - a.score;
       }
-      
-      if (selectedDrill === "drill-rrt") {
-        if (sortBy === "score_high") return (b.reactionTimeMs || 0) - (a.reactionTimeMs || 0);
-        return (a.reactionTimeMs || 0) - (b.reactionTimeMs || 0); // score_low (default)
+      if (selectedDrill === "RRT") {
+        // RRT: Fastest (lowest milliseconds) is best
+        const valA = a.reactionTimeMs ?? a.score ?? 999999;
+        const valB = b.reactionTimeMs ?? b.score ?? 999999;
+        return valA - valB;
       }
-      
-      if (selectedDrill === "drill-gonogo") {
-        if (sortBy === "score_low") return (a.correctResponses || 0) - (b.correctResponses || 0);
-        return (b.correctResponses || 0) - (a.correctResponses || 0); // score_high (default)
+      if (selectedDrill === "GoNoGo") {
+        // GoNoGo: Highest correctResponses is best. Fallback to score
+        const valA = a.correctResponses ?? a.score ?? 0;
+        const valB = b.correctResponses ?? b.score ?? 0;
+        return valB - valA;
       }
-      
-      if (selectedDrill === "drill-crt") {
-        if (sortBy === "score_low") return (a.reactionTimeMs || 0) - (b.reactionTimeMs || 0); // Fastest reaction time
-        return (b.accuracyPercentage || 0) - (a.accuracyPercentage || 0); // score_high (default) - Highest Accuracy
+      if (selectedDrill === "CRT") {
+        // CRT: Highest accuracyPercentage is best. Fallback to score
+        const valA = a.accuracyPercentage ?? a.score ?? 0;
+        const valB = b.accuracyPercentage ?? b.score ?? 0;
+        return valB - valA;
       }
-      
-      return (b.score ?? b.compositeScore) - (a.score ?? a.compositeScore);
+
+      return b.score - a.score;
     });
 
     return data;
-  }, [results, athletes, selectedDrill, sortBy, searchQuery]);
+  }, [leaderboardEntries, eventLeads, leads, eventId, selectedDrill, sortBy, searchQuery]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-32">
@@ -105,16 +124,41 @@ export function Leaderboard() {
         <div>
           <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-white mb-2 flex items-center gap-4">
             <Trophy className="text-[var(--color-ares-teal)]" size={48} />
-            Live Ranks
+            Leaderboard
           </h2>
-          <p className="text-[var(--color-ares-muted)] tracking-widest uppercase text-sm font-bold">
-            Public Display Mode
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--color-ares-muted)] font-semibold uppercase tracking-wider">
+            <span>Public Display Mode</span>
+            {event && (
+              <>
+                <span className="text-[var(--color-ares-teal)] font-bold">·</span>
+                <span className="flex items-center gap-1"><MapPin size={12} /> {event.location}</span>
+                <span className="text-[var(--color-ares-teal)] font-bold">·</span>
+                <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(event.start_datetime).toLocaleDateString()}</span>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-4 bg-[var(--color-ares-charcoal)]/80 backdrop-blur-md p-2 rounded-xl border border-[var(--color-ares-dark-purple)] w-full md:w-auto">
+          {/* Switch Event Dropdown */}
+          <div className="flex items-center px-3 py-1 border-r border-[var(--color-ares-dark-purple)]">
+            <Filter size={16} className="text-[var(--color-ares-muted)] mr-2 shrink-0" />
+            <select
+              value={eventId}
+              onChange={handleEventChange}
+              className="bg-transparent text-sm font-bold uppercase tracking-wider text-[var(--color-ares-teal)] focus:outline-none appearance-none cursor-pointer pr-4"
+            >
+              <option value="" className="bg-[var(--color-ares-bg)] text-white">Select Event...</option>
+              {events.map((e) => (
+                <option key={e.id} value={e.id} className="bg-[var(--color-ares-bg)] text-white">
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Search bar inside header */}
-          <div className="flex items-center px-3 py-1 border-r border-[var(--color-ares-dark-purple)] flex-1 md:flex-initial min-w-[200px]">
+          <div className="flex items-center px-3 py-1 border-r border-[var(--color-ares-dark-purple)] flex-1 md:flex-initial min-w-[150px]">
             <Search size={16} className="text-[var(--color-ares-muted)] mr-2 shrink-0" />
             <input
               type="text"
@@ -147,32 +191,37 @@ export function Leaderboard() {
 
       {/* Drill Selection Tabs */}
       <div className="flex flex-wrap gap-2 mb-6 relative z-10">
-        {drills.map((d) => (
+        {(["GUST", "RRT", "GoNoGo", "CRT"] as DrillCategory[]).map((drill) => (
           <button
-            key={d.id}
-            onClick={() => handleDrillChange(d.id)}
+            key={drill}
+            onClick={() => handleDrillChange(drill)}
             className={cn(
               "px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border cursor-pointer",
-              selectedDrill === d.id
+              selectedDrill === drill
                 ? "bg-[var(--color-ares-teal)] text-white border-[var(--color-ares-teal)] glow-shadow"
                 : "bg-[var(--color-ares-charcoal)] border-[var(--color-ares-dark-purple)] text-[var(--color-ares-muted)] hover:text-white"
             )}
           >
-            {d.name}
+            {DRILL_LABELS[drill]}
           </button>
         ))}
       </div>
 
-      {leaderboardData.length === 0 ? (
+      {!eventId ? (
         <div className="text-center py-20 bg-[var(--color-ares-charcoal)]/50 rounded-2xl border border-[var(--color-ares-dark-purple)] backdrop-blur-md relative z-10">
           <Trophy className="mx-auto text-[var(--color-ares-dark-purple)] mb-4" size={48} />
-          <p className="text-[var(--color-ares-muted)] uppercase tracking-widest font-bold">No results found</p>
+          <p className="text-[var(--color-ares-muted)] uppercase tracking-widest font-bold">Please select an event to view rankings</p>
+        </div>
+      ) : leaderboardData.length === 0 ? (
+        <div className="text-center py-20 bg-[var(--color-ares-charcoal)]/50 rounded-2xl border border-[var(--color-ares-dark-purple)] backdrop-blur-md relative z-10">
+          <Trophy className="mx-auto text-[var(--color-ares-dark-purple)] mb-4" size={48} />
+          <p className="text-[var(--color-ares-muted)] uppercase tracking-widest font-bold">No entries found for this drill</p>
         </div>
       ) : (
-        <div className="flex-1 bg-[var(--color-ares-charcoal)]/60 border border-ares rounded-2xl overflow-hidden flex flex-col relative z-10">
+        <div className="flex-1 bg-[var(--color-ares-charcoal)]/60 border border-[var(--color-ares-dark-purple)] rounded-2xl overflow-hidden flex flex-col relative z-10">
           {/* Header Row */}
-          {selectedDrill === "drill-gust" && (
-            <div className="hidden md:grid grid-cols-12 bg-[var(--color-ares-charcoal)] border-b border-ares p-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ares-muted)]">
+          {selectedDrill === "GUST" && (
+            <div className="hidden md:grid grid-cols-12 bg-[var(--color-ares-charcoal)] border-b border-[var(--color-ares-dark-purple)] p-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ares-muted)]">
               <div className="col-span-1">Rank</div>
               <div className="col-span-3">Athlete</div>
               <div className="col-span-3">Sport / Team</div>
@@ -181,16 +230,16 @@ export function Leaderboard() {
               <div className="col-span-2 text-right">Score</div>
             </div>
           )}
-          {selectedDrill === "drill-rrt" && (
-            <div className="hidden md:grid grid-cols-12 bg-[var(--color-ares-charcoal)] border-b border-ares p-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ares-muted)]">
+          {selectedDrill === "RRT" && (
+            <div className="hidden md:grid grid-cols-12 bg-[var(--color-ares-charcoal)] border-b border-[var(--color-ares-dark-purple)] p-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ares-muted)]">
               <div className="col-span-1">Rank</div>
               <div className="col-span-4">Athlete</div>
               <div className="col-span-4">Sport / Team</div>
               <div className="col-span-3 text-right">Reaction Time</div>
             </div>
           )}
-          {selectedDrill === "drill-gonogo" && (
-            <div className="hidden md:grid grid-cols-12 bg-[var(--color-ares-charcoal)] border-b border-ares p-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ares-muted)]">
+          {selectedDrill === "GoNoGo" && (
+            <div className="hidden md:grid grid-cols-12 bg-[var(--color-ares-charcoal)] border-b border-[var(--color-ares-dark-purple)] p-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ares-muted)]">
               <div className="col-span-1">Rank</div>
               <div className="col-span-3">Athlete</div>
               <div className="col-span-3">Sport / Team</div>
@@ -199,8 +248,8 @@ export function Leaderboard() {
               <div className="col-span-2 text-right">Avg Time</div>
             </div>
           )}
-          {selectedDrill === "drill-crt" && (
-            <div className="hidden md:grid grid-cols-12 bg-[var(--color-ares-charcoal)] border-b border-ares p-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ares-muted)]">
+          {selectedDrill === "CRT" && (
+            <div className="hidden md:grid grid-cols-12 bg-[var(--color-ares-charcoal)] border-b border-[var(--color-ares-dark-purple)] p-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ares-muted)]">
               <div className="col-span-1">Rank</div>
               <div className="col-span-3">Athlete</div>
               <div className="col-span-3">Sport / Team</div>
@@ -217,7 +266,7 @@ export function Leaderboard() {
                 "border-slate-300/50 bg-slate-300/10 text-slate-200 shadow-[0_0_15px_rgba(203,213,225,0.2)]", // 2nd
                 "border-amber-700/50 bg-amber-700/10 text-amber-600 shadow-[0_0_15px_rgba(180,83,9,0.2)]",   // 3rd
               ];
-              const rankCls = isTop3 ? placeColors[index] : "border-ares text-[var(--color-ares-white)]";
+              const rankCls = isTop3 ? placeColors[index] : "border-[var(--color-ares-dark-purple)] text-[var(--color-ares-white)]";
 
               return (
                 <motion.div
@@ -232,7 +281,7 @@ export function Leaderboard() {
                 >
                   {/* Rank */}
                   <div className="col-span-1 mb-2 md:mb-0">
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs", rankCls)}>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs border", rankCls)}>
                       {isTop3 ? (index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉") : String(index + 1).padStart(2, '0')}
                     </div>
                   </div>
@@ -240,22 +289,22 @@ export function Leaderboard() {
                   {/* Athlete Info */}
                   <div className="col-span-3 mb-2 md:mb-0">
                     <p className="font-bold text-white uppercase tracking-tight flex items-center gap-1.5">
-                      {row.athlete?.firstName} {row.athlete?.lastName}
+                      {row.lead?.first_name} {row.lead?.last_name}
                       {index === 0 && <Crown size={12} className="text-amber-400 shrink-0" />}
                     </p>
                     <p className="text-[10px] uppercase text-[var(--color-ares-muted)]">
-                      {row.athlete?.position || "Athlete"}
+                      {row.lead?.role || "Lead"}
                     </p>
                   </div>
 
                   {/* Sport/Team Info */}
                   <div className="col-span-3 mb-2 md:mb-0">
-                    <p className="text-xs font-semibold text-white">{row.athlete?.sport}</p>
-                    <p className="text-[9px] uppercase text-[var(--color-ares-muted)]">{row.athlete?.team}</p>
+                    <p className="text-xs font-semibold text-white">{row.lead?.sport_or_industry}</p>
+                    <p className="text-[9px] uppercase text-[var(--color-ares-muted)]">{row.lead?.organization}</p>
                   </div>
 
                   {/* Drill Specific Cells */}
-                  {selectedDrill === "drill-gust" && (
+                  {selectedDrill === "GUST" && (
                     <>
                       <div className="col-span-2 flex md:justify-center items-center gap-2 mb-1 md:mb-0">
                         <span className="md:hidden text-[10px] text-[var(--color-ares-muted)] uppercase tracking-widest">Blk/Bomb:</span>
@@ -272,29 +321,29 @@ export function Leaderboard() {
                       <div className="col-span-2 flex md:justify-end items-center gap-2">
                         <span className="md:hidden text-[10px] text-[var(--color-ares-muted)] uppercase tracking-widest">Score:</span>
                         <span className="text-lg font-black text-right text-[var(--color-ares-teal)]">
-                          {row.score ?? row.compositeScore}
+                          {row.score}
                         </span>
                       </div>
                     </>
                   )}
 
-                  {selectedDrill === "drill-rrt" && (
+                  {selectedDrill === "RRT" && (
                     <>
                       <div className="col-span-5 flex md:justify-end items-center gap-2">
                         <span className="md:hidden text-[10px] text-[var(--color-ares-muted)] uppercase tracking-widest">Reaction Time:</span>
                         <span className="text-lg font-black text-right text-[#a78bfa] font-mono">
-                          {row.reactionTimeMs || 0} ms
+                          {row.reactionTimeMs ?? row.score} ms
                         </span>
                       </div>
                     </>
                   )}
 
-                  {selectedDrill === "drill-gonogo" && (
+                  {selectedDrill === "GoNoGo" && (
                     <>
                       <div className="col-span-2 flex md:justify-center items-center gap-2 mb-1 md:mb-0">
                         <span className="md:hidden text-[10px] text-[var(--color-ares-muted)] uppercase tracking-widest">Correct:</span>
                         <span className="font-mono text-sm text-white text-center">
-                          {row.correctResponses || 0}
+                          {row.correctResponses ?? row.score}
                         </span>
                       </div>
                       <div className="col-span-1 flex md:justify-center items-center gap-2 mb-2 md:mb-0">
@@ -312,7 +361,7 @@ export function Leaderboard() {
                     </>
                   )}
 
-                  {selectedDrill === "drill-crt" && (
+                  {selectedDrill === "CRT" && (
                     <>
                       <div className="col-span-2 flex md:justify-center items-center gap-2 mb-1 md:mb-0">
                         <span className="md:hidden text-[10px] text-[var(--color-ares-muted)] uppercase tracking-widest">Avg Time:</span>
@@ -323,7 +372,7 @@ export function Leaderboard() {
                       <div className="col-span-3 flex md:justify-end items-center gap-2">
                         <span className="md:hidden text-[10px] text-[var(--color-ares-muted)] uppercase tracking-widest">Accuracy:</span>
                         <span className="text-lg font-black text-right text-[#fb923c] font-mono">
-                          {row.accuracyPercentage || 0}%
+                          {row.accuracyPercentage ?? row.score}%
                         </span>
                       </div>
                     </>
@@ -337,3 +386,4 @@ export function Leaderboard() {
     </div>
   );
 }
+
