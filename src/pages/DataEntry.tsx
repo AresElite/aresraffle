@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { DrillCategory, Result } from "../types";
 import { Search, UserCheck, Ticket, CheckCircle2, Clock, Zap, Brain, Activity } from "lucide-react";
 import { syncResultToFirebase, incrementAthleteTicketsInFirebase, updateAthleteInFirebase } from "../lib/firebase-sync";
+import { useLocation } from "react-router-dom";
 
 // ─── Drill metadata ────────────────────────────────────────────────────────────
 const DRILL_DEFS: {
@@ -137,9 +138,15 @@ function GoNoGoForm({ onSubmit }: { onSubmit: (data: Partial<Result>) => void })
 // ─── Main Component ────────────────────────────────────────────────────────────
 export function DataEntry() {
   const { athletes, results, addResult, incrementAthleteTickets } = useStore();
+  const location = useLocation();
+  const state = location.state as { athleteId?: string; activeDrill?: DrillCategory } | null;
   const [search, setSearch] = useState("");
-  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
-  const [activeDrill, setActiveDrill] = useState<DrillCategory>("GUST");
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(
+    state?.athleteId || null
+  );
+  const [activeDrill, setActiveDrill] = useState<DrillCategory>(
+    state?.activeDrill || "GUST"
+  );
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 

@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { useStore } from "../store";
 import { v4 as uuidv4 } from "uuid";
 import { Athlete } from "../types";
-import { UserCheck, AlertCircle } from "lucide-react";
+import { UserCheck, AlertCircle, Brain, Zap, Clock, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { syncAthleteToFirebase } from "../lib/firebase-sync";
 
@@ -13,6 +13,7 @@ export function Registration() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [registeredRaffleId, setRegisteredRaffleId] = useState<number | null>(null);
+  const [registeredAthlete, setRegisteredAthlete] = useState<{ id: string; name: string } | null>(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -118,19 +119,17 @@ export function Registration() {
     addAthlete(newAthlete);
     await syncAthleteToFirebase(newAthlete);
     setRegisteredRaffleId(generatedRaffleID);
+    setRegisteredAthlete({ id: newAthlete.id, name: `${newAthlete.firstName} ${newAthlete.lastName}` });
     setLoading(false);
     setSuccess(true);
     setTouched({});
-    setTimeout(() => {
-      setSuccess(false);
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        consentAccepted: false,
-      });
-    }, 4000);
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      consentAccepted: false,
+    });
   };
 
   const getInputClass = (name: string) => {
@@ -153,15 +152,58 @@ export function Registration() {
     return null;
   };
 
-  if (success) {
+  if (success && registeredAthlete) {
     return (
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="w-20 h-20 bg-[var(--color-ares-teal)]/20 rounded-full flex items-center justify-center text-[var(--color-ares-teal)] mb-6 glow-shadow">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-md mx-auto space-y-6">
+        <div className="w-20 h-20 bg-[var(--color-ares-teal)]/20 rounded-full flex items-center justify-center text-[var(--color-ares-teal)] mb-2 glow-shadow">
           <UserCheck size={40} />
         </div>
-        <h2 className="text-3xl font-bold uppercase tracking-tight text-white mb-2">Registration Complete!</h2>
-        <p className="text-[var(--color-ares-muted)] mb-2">The athlete has been registered with Raffle ID <span className="text-[var(--color-ares-teal)] font-bold font-mono">#{registeredRaffleId}</span></p>
-        <button onClick={() => setSuccess(false)} className="px-8 py-3 bg-[var(--color-ares-charcoal)] border border-[var(--color-ares-teal)] text-[var(--color-ares-teal)] font-bold tracking-widest uppercase rounded-xl hover:bg-[var(--color-ares-teal)] hover:text-white transition-all">
+        <div>
+          <h2 className="text-3xl font-bold uppercase tracking-tight text-white mb-2 font-black">Registration Complete!</h2>
+          <p className="text-[var(--color-ares-muted)] text-sm">
+            Athlete <span className="text-white font-bold">{registeredAthlete.name}</span> has been registered with Raffle ID:
+          </p>
+          <p className="text-2xl font-mono font-black text-[var(--color-ares-teal)] mt-2">#{registeredRaffleId}</p>
+        </div>
+
+        <div className="w-full bg-[var(--color-ares-charcoal)] border border-[var(--color-ares-dark-purple)] rounded-2xl p-6 space-y-4">
+          <p className="text-[10px] font-bold tracking-[0.2em] text-[var(--color-ares-purple)] uppercase">Select Drill to Record Score</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => navigate("/entry", { state: { athleteId: registeredAthlete.id, activeDrill: "GUST" } })}
+              className="flex items-center justify-center gap-2 p-3 bg-[var(--color-ares-bg)] border border-[var(--color-ares-dark-purple)] rounded-xl text-xs font-bold uppercase tracking-wider text-white hover:border-[var(--color-ares-teal)] hover:bg-white/5 transition-all cursor-pointer"
+            >
+              <Brain size={14} className="text-[var(--color-ares-teal)]" />
+              GUST
+            </button>
+            <button
+              onClick={() => navigate("/entry", { state: { athleteId: registeredAthlete.id, activeDrill: "RRT" } })}
+              className="flex items-center justify-center gap-2 p-3 bg-[var(--color-ares-bg)] border border-[var(--color-ares-dark-purple)] rounded-xl text-xs font-bold uppercase tracking-wider text-white hover:border-[#a78bfa] hover:bg-white/5 transition-all cursor-pointer"
+            >
+              <Zap size={14} className="text-[#a78bfa]" />
+              RRT
+            </button>
+            <button
+              onClick={() => navigate("/entry", { state: { athleteId: registeredAthlete.id, activeDrill: "GoNoGo" } })}
+              className="flex items-center justify-center gap-2 p-3 bg-[var(--color-ares-bg)] border border-[var(--color-ares-dark-purple)] rounded-xl text-xs font-bold uppercase tracking-wider text-white hover:border-[#34d399] hover:bg-white/5 transition-all cursor-pointer"
+            >
+              <Clock size={14} className="text-[#34d399]" />
+              Go/No-Go
+            </button>
+            <button
+              onClick={() => navigate("/entry", { state: { athleteId: registeredAthlete.id, activeDrill: "CRT" } })}
+              className="flex items-center justify-center gap-2 p-3 bg-[var(--color-ares-bg)] border border-[var(--color-ares-dark-purple)] rounded-xl text-xs font-bold uppercase tracking-wider text-white hover:border-[#fb923c] hover:bg-white/5 transition-all cursor-pointer"
+            >
+              <Activity size={14} className="text-[#fb923c]" />
+              CRT
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={() => { setSuccess(false); setRegisteredAthlete(null); }}
+          className="w-full px-8 py-3 bg-[var(--color-ares-charcoal)] border border-[var(--color-ares-teal)] text-[var(--color-ares-teal)] font-bold tracking-widest uppercase rounded-xl hover:bg-[var(--color-ares-teal)] hover:text-white transition-all cursor-pointer"
+        >
           Register Another
         </button>
       </motion.div>
