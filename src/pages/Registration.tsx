@@ -103,37 +103,14 @@ export function Registration() {
       errs.phone = "Phone number must be at least 10 digits";
     }
     
-    if (!data.dateOfBirth) errs.dateOfBirth = "Date of birth is required";
-    if (!data.sport) errs.sport = "Sport selection is required";
-    if (!data.level) errs.level = "Level selection is required";
-    if (!data.position.trim()) errs.position = "Position is required";
-    if (!data.team.trim()) errs.team = "Team/School/Org is required";
-    if (!data.dominantHand) errs.dominantHand = "Dominant hand is required";
-    if (!data.dominantEye) errs.dominantEye = "Dominant eye is required";
     if (!data.consentAccepted) errs.consentAccepted = "Consent must be accepted";
 
-    const age = calculateAge(data.dateOfBirth);
-    if (age > 0 && age < 18) {
-      if (!data.parentGuardianName.trim()) {
-        errs.parentGuardianName = "Guardian name is required for minors";
-      }
-      if (!data.parentGuardianEmail.trim()) {
-        errs.parentGuardianEmail = "Guardian email is required for minors";
-      } else if (!/\S+@\S+\.\S+/.test(data.parentGuardianEmail)) {
-        errs.parentGuardianEmail = "Invalid email address";
-      }
-      if (!data.parentGuardianPhone.trim()) {
-        errs.parentGuardianPhone = "Guardian phone is required for minors";
-      } else if (data.parentGuardianPhone.replace(/\D/g, "").length < 10) {
-        errs.parentGuardianPhone = "Guardian phone must be at least 10 digits";
-      }
-    }
     return errs;
   };
 
   const errors = getFormErrors(formData);
 
-  const isRacing = formData.sport.startsWith("Auto Racing") || formData.sport === "Motorsports";
+  const isRacing = formData.sport ? (formData.sport.startsWith("Auto Racing") || formData.sport === "Motorsports") : false;
   
   const filteredLevels = isRacing
     ? LEAGUES_LEVELS.filter(l => l.startsWith("Racing") || l === "Other")
@@ -338,7 +315,7 @@ export function Registration() {
               </div>
               <div className="flex flex-col col-span-1 md:col-span-2">
                 <span className="text-[10px] text-[var(--color-ares-muted)] uppercase tracking-wider mb-1 px-1">Date of Birth</span>
-                <input required type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} onBlur={handleBlur} className={getInputClass("dateOfBirth")} />
+                <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} onBlur={handleBlur} className={getInputClass("dateOfBirth")} />
                 {renderError("dateOfBirth")}
               </div>
             </div>
@@ -348,14 +325,14 @@ export function Registration() {
              <h3 className="text-xs font-bold tracking-[0.2em] text-[var(--color-ares-teal)] uppercase mb-4">Sports Profile</h3>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <select required name="sport" value={formData.sport} onChange={handleChange} onBlur={handleBlur} className={getInputClass("sport")}>
+                <select name="sport" value={formData.sport} onChange={handleChange} onBlur={handleBlur} className={getInputClass("sport")}>
                   <option value="" disabled>Select Primary Sport</option>
                   {COMMON_SPORTS.map(s => <option key={s} value={s} className="bg-[var(--color-ares-bg)] text-white">{s}</option>)}
                 </select>
                 {renderError("sport")}
               </div>
               <div>
-                <select required name="level" value={formData.level} onChange={handleChange} onBlur={handleBlur} className={getInputClass("level")}>
+                <select name="level" value={formData.level} onChange={handleChange} onBlur={handleBlur} className={getInputClass("level")}>
                   <option value="" disabled>Select Level / League</option>
                   {filteredLevels.map(l => <option key={l} value={l} className="bg-[var(--color-ares-bg)] text-white">{l}</option>)}
                 </select>
@@ -364,14 +341,14 @@ export function Registration() {
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <input required list="position-suggestions" name="position" value={formData.position} onChange={handleChange} onBlur={handleBlur} placeholder="Position (e.g. QB, Driver, Midfielder)" className={getInputClass("position")} />
+                <input list="position-suggestions" name="position" value={formData.position} onChange={handleChange} onBlur={handleBlur} placeholder="Position (e.g. QB, Driver, Midfielder)" className={getInputClass("position")} />
                 <datalist id="position-suggestions">
                   {suggestions.map(s => <option key={s} value={s} />)}
                 </datalist>
                 {renderError("position")}
               </div>
               <div>
-                <input required name="team" value={formData.team} onChange={handleChange} onBlur={handleBlur} placeholder="Team / School / Organization" className={getInputClass("team")} />
+                <input name="team" value={formData.team} onChange={handleChange} onBlur={handleBlur} placeholder="Team / School / Organization" className={getInputClass("team")} />
                 {renderError("team")}
               </div>
              </div>
@@ -381,7 +358,7 @@ export function Registration() {
              <h3 className="text-xs font-bold tracking-[0.2em] text-[var(--color-ares-teal)] uppercase mb-4">Visual & Health Profile</h3>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <select required name="dominantHand" value={formData.dominantHand} onChange={handleChange} onBlur={handleBlur} className={getInputClass("dominantHand")}>
+                <select name="dominantHand" value={formData.dominantHand} onChange={handleChange} onBlur={handleBlur} className={getInputClass("dominantHand")}>
                   <option value="" disabled>Select Dominant Hand</option>
                   <option value="Right" className="bg-[var(--color-ares-bg)] text-white">Right Handed</option>
                   <option value="Left" className="bg-[var(--color-ares-bg)] text-white">Left Handed</option>
@@ -390,7 +367,7 @@ export function Registration() {
                 {renderError("dominantHand")}
               </div>
               <div>
-                <select required name="dominantEye" value={formData.dominantEye} onChange={handleChange} onBlur={handleBlur} className={getInputClass("dominantEye")}>
+                <select name="dominantEye" value={formData.dominantEye} onChange={handleChange} onBlur={handleBlur} className={getInputClass("dominantEye")}>
                   <option value="" disabled>Select Dominant Eye</option>
                   <option value="Right" className="bg-[var(--color-ares-bg)] text-white">Right Eye Dominant</option>
                   <option value="Left" className="bg-[var(--color-ares-bg)] text-white">Left Eye Dominant</option>
@@ -401,7 +378,7 @@ export function Registration() {
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <select required name="correctiveLenses" value={formData.correctiveLenses} onChange={handleChange} onBlur={handleBlur} className={getInputClass("correctiveLenses")}>
+                <select name="correctiveLenses" value={formData.correctiveLenses} onChange={handleChange} onBlur={handleBlur} className={getInputClass("correctiveLenses")}>
                   <option value="" disabled>Corrective Lenses / Vision Correction</option>
                   <option value="None" className="bg-[var(--color-ares-bg)] text-white">None</option>
                   <option value="Glasses" className="bg-[var(--color-ares-bg)] text-white">Glasses</option>
@@ -411,7 +388,7 @@ export function Registration() {
                 {renderError("correctiveLenses")}
               </div>
               <div>
-                <select required name="concussionHistory" value={formData.concussionHistory} onChange={handleChange} onBlur={handleBlur} className={getInputClass("concussionHistory")}>
+                <select name="concussionHistory" value={formData.concussionHistory} onChange={handleChange} onBlur={handleBlur} className={getInputClass("concussionHistory")}>
                   <option value="" disabled>History of Concussions?</option>
                   <option value="Yes" className="bg-[var(--color-ares-bg)] text-white">Yes, history of concussion</option>
                   <option value="No" className="bg-[var(--color-ares-bg)] text-white">No history of concussion</option>
@@ -422,7 +399,7 @@ export function Registration() {
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <select required name="interestedInEvaluation" value={formData.interestedInEvaluation} onChange={handleChange} onBlur={handleBlur} className={getInputClass("interestedInEvaluation")}>
+                <select name="interestedInEvaluation" value={formData.interestedInEvaluation} onChange={handleChange} onBlur={handleBlur} className={getInputClass("interestedInEvaluation")}>
                   <option value="" disabled>Interested in Sports Vision Evaluation?</option>
                   <option value="Yes" className="bg-[var(--color-ares-bg)] text-white">Yes</option>
                   <option value="No" className="bg-[var(--color-ares-bg)] text-white">No</option>
@@ -431,7 +408,7 @@ export function Registration() {
                 {renderError("interestedInEvaluation")}
               </div>
               <div>
-                <select required name="interestedInTraining" value={formData.interestedInTraining} onChange={handleChange} onBlur={handleBlur} className={getInputClass("interestedInTraining")}>
+                <select name="interestedInTraining" value={formData.interestedInTraining} onChange={handleChange} onBlur={handleBlur} className={getInputClass("interestedInTraining")}>
                   <option value="" disabled>Interested in Sports Vision Training?</option>
                   <option value="Yes" className="bg-[var(--color-ares-bg)] text-white">Yes</option>
                   <option value="No" className="bg-[var(--color-ares-bg)] text-white">No</option>
