@@ -4,12 +4,12 @@ export interface Athlete {
   lastName: string;
   email: string;
   phone: string;
-  dateOfBirth: string; // YYYY-MM-DD
-  age: number;
-  sport: string;
+  dateOfBirth?: string; // YYYY-MM-DD
+  age?: number;
+  sport?: string;
   level?: string;
-  position: string;
-  team: string; // or school
+  position?: string;
+  team?: string; // or school
   graduationYear?: string;
   parentGuardianName?: string;
   parentGuardianEmail?: string;
@@ -19,8 +19,8 @@ export interface Athlete {
   correctiveLenses?: string;
   concussionHistory?: string;
   performanceGoal?: string;
-  interestedInEvaluation: string;
-  interestedInTraining: string;
+  interestedInEvaluation?: string;
+  interestedInTraining?: string;
   consentAccepted: boolean;
   createdAt: string;
   raffleId?: number;
